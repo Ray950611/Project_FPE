@@ -2,7 +2,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 from sys import exit
 def k_test01 ( x_num, x, t ):
-
+  """
+  This function sets the k parameter for all grid points and returns that k_value.
+  """
   k_value = np.zeros ( x_num )
 
   for i in range ( 0, x_num ):
@@ -10,25 +12,37 @@ def k_test01 ( x_num, x, t ):
 
   return k_value
 def bc_test01 ( x_num, x, t, u ):
+  """
+  This function sets the boundary conditions for the first test problem with Gaussian distribution.
+  It returns the solution array u after setting its boundary values to be the true solution values.
+  """
   k = 1.0
   u[0]       = np.exp(-x[0]**2 / (2+4*k*t)) / np.sqrt((2+4*k*t)*np.pi)
   u[x_num-1] = np.exp(-x[-1]**2 / (2+4*k*t)) / np.sqrt((2+4*k*t)*np.pi)
 
   return u
 def bc_test02 ( x_num, x, t, u ):
+  """
+  This function sets the boundary conditions for the second test problem with uniform distribution and fixed boundary.
+  It returns the solution array u after setting its boundary values to be the true solution values.
+  """
   u[0]       = 0.0
   u[x_num-1] = 0.0
 
   return u
 def rhs_test01 ( x_num, x, t ):
-
+  """
+  This function sets the source term to be zero for the diffusion equation.
+  The returned array is an zero array for the rhs evaluation.
+  """
   rhs_value = np.zeros ( x_num )
 
   return rhs_value
   
-def reference_to_physical ( element, element_node, node_x, reference_num, \
-  reference_x ):
-
+def reference_to_physical ( element, element_node, node_x, reference_num, reference_x ):
+  """
+  This function maps points in the reference interval into an element and returns the physical x array.
+  """
   physical_x = np.zeros ( reference_num )
 
   for i in range ( 0, reference_num ):
@@ -41,6 +55,9 @@ def reference_to_physical ( element, element_node, node_x, reference_num, \
 
   return physical_x
 def quadrature_set ( quad_num ):
+  """
+  This function returns the quadrature rule for the input quadrature type.
+  """
 
   if ( quad_num == 1 ):
 
@@ -127,6 +144,9 @@ def quadrature_set ( quad_num ):
     exit("Fatal Error")
   return quad_w, quad_x
 def basis_function ( index, element, node_x, point_x ):
+  """
+  This function returns the evaluated basis function b at a node, along with its first derivative value.
+  """
   b    = 0.0
   dbdx = 0.0
 
@@ -140,6 +160,9 @@ def basis_function ( index, element, node_x, point_x ):
   return b, dbdx
 
 def assemble_mass ( node_num, node_x, element_num, element_node, quad_num ):
+  """
+  This function assembles and returns the Finite Element mass matrix C.
+  """
 
   c = np.zeros ( ( node_num, node_num ) )
 #
@@ -191,7 +214,9 @@ def assemble_mass ( node_num, node_x, element_num, element_node, quad_num ):
 
   return c
 def fem1d_heat_explicit_cfl ( x_num, k, x, dt ):
-
+  """
+  This function checks and returns the cfl condition for diffusion equation on the discretization given.
+  """
   cfl = 0.0
   for i in range ( 0, x_num - 2 ):
     cfl = max ( cfl, k[i+1] / ( x[i+1] - x[i] ) ** 2 )
@@ -208,6 +233,9 @@ def fem1d_heat_explicit_cfl ( x_num, k, x, dt ):
   return cfl 
 def assemble_fem ( x_num, x, element_num, element_node, quad_num, t, k_fun, \
   rhs_fun ):
+  """
+  This function assembles and returns the finite element stiffness matrix A, along with the rhs b.
+  """
 #
 #  Initialize the arrays.
 #
@@ -270,6 +298,9 @@ def assemble_fem ( x_num, x, element_num, element_node, quad_num, t, k_fun, \
 
 def fem1d_heat_explicit ( x_num, x, t, dt, k_fun, rhs_fun, bc_fun, \
   element_num, element_node, quad_num, mass, u ):
+  """
+  Evaluates and returns u_new,solution at t+dt, given input u, the solution at t.
+  """
 #
 #  Check stability condition.
 #
@@ -307,7 +338,12 @@ def fem1d_heat_explicit ( x_num, x, t, dt, k_fun, rhs_fun, bc_fun, \
 
   return u_new
 def fem_solve(k,m,n,a,b,T):
-  
+  """
+  This function solves a diffusion problem using speicifed parameter k=1.0,
+  with m spatial points and n time steps on the interval [a,b] and end time T.
+  It plots the numerical solution at the end time and returns the end time error 
+  as compared with the true solution.
+  """
   x_num = m+1
   x_min = a
   x_max = b
@@ -360,15 +396,14 @@ def fem_solve(k,m,n,a,b,T):
 
       u = fem1d_heat_explicit ( x_num, x, t[j-1], dt, k_test01, \
         rhs_test01, bc_test, element_num, element_node, quad_num, mass, u )
-  #test 1 true
+  #test 1 true solution
   #u_true = np.exp(-x**2 / (2+4*k*t_max)) / np.sqrt((2+4*k*t_max)*np.pi)  
-  
+  #test 2 true solution
   u_true = (4*c/np.pi)*np.sin(np.pi*(x-x_min)/L)*np.exp(-k*t_max*np.pi**2/L**2)
   for i in range(1,17):
       n = 2*i+1
       u_true+=(4*c/(n*np.pi))*np.sin(n*np.pi*(x-x_min)/L)*np.exp(-k*t_max*n**2*np.pi**2/L**2)
-     
-  
+  #print error  
   print "Error at t="+str(t_max)+":"+str(np.linalg.norm((u-u_true)*dx,ord=1))
    
   plt.plot(x,u,'ro',label="FEM, dx="+str(dx))
@@ -378,8 +413,9 @@ def fem_solve(k,m,n,a,b,T):
   plt.show()
   return np.linalg.norm((u-u_true)*dx,ord=1)
 
-#order of accuracy study
+#order of accuracy study for test02
 def error_test02():
+  
     k = 1.0
     T = 0.1
     a = 0.0
@@ -390,7 +426,10 @@ def error_test02():
         dx.append((b-a)/m)
         n = m*m/100
         error = fem_solve(k,m,n,a,b,T)
-        e.append(error) 
+        print str(error)
+        e.append(error)
+    return e
+#for each test, use the corresponding bc_test and initial condition in the fem_solve function.
 #test 1
 #fem_solve(1.0,100,400,-5.0,5.0,1.0)
 #test 2
